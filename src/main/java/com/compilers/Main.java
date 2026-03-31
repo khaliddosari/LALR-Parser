@@ -20,7 +20,7 @@ public class Main {
         testExpressionGrammar();
     }
 
-    // ── Simple grammar: S -> A a | b,  A -> c ────────────────────────────────
+    // ── Simple grammar: S -> A a | b,  A -> c ───────────────────────────────
 
     static void testSimpleGrammar() {
         System.out.println("SIMPLE GRAMMAR\nGrammar:\n  S -> A a\n  S -> b\n  A -> c");
