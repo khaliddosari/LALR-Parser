@@ -679,6 +679,8 @@ td.action-error  { color: var(--red); }
         position: fixed;
         top: 0;
         right: -100%;
+        left: auto;
+        transform: none;
         width: 200px;
         height: 100vh;
         background: rgba(10, 10, 15, 0.98);
