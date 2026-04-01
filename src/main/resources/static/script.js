@@ -1,7 +1,7 @@
-// ==================== INIT ====================
+// INIT
 AOS.init({ duration: 700, easing: 'ease-out', once: true, offset: 80 });
 
-// ==================== NAVBAR ====================
+// NAVBAR
 const navbar = document.getElementById('navbar');
 window.addEventListener('scroll', () => {
     navbar.classList.toggle('scrolled', window.scrollY > 50);
@@ -39,7 +39,7 @@ function setActiveLink() {
 window.addEventListener('scroll', setActiveLink);
 setActiveLink();
 
-// ==================== PRESETS ====================
+// PRESETS
 const presets = {
     simple: { start: 'S', prods: 'S -> A a\nS -> b\nA -> c', input: 'c a' },
     expr:   { start: 'E', prods: 'E -> E + T\nE -> T\nT -> id', input: 'id + id' },
@@ -60,7 +60,7 @@ function clearResults() {
     document.getElementById('errorBox').classList.add('hidden');
 }
 
-// ==================== PARSE ====================
+// PARSE
 async function doParse() {
     const btn = document.getElementById('parseBtn');
     const btnText = document.getElementById('btnText');
@@ -106,7 +106,7 @@ function showError(msg) {
     box.classList.remove('hidden');
 }
 
-// ==================== RENDER ====================
+// RENDER
 function renderResults(data) {
     const lr = data.lalrResult;
     const pr = data.parseResult;
@@ -214,7 +214,7 @@ function esc(str) {
     return d.innerHTML;
 }
 
-// ==================== KEYBOARD ====================
+// KEYBOARD
 document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') doParse();
 });
