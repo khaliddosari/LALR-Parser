@@ -3,558 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LALR Parser</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta name="description" content="LALR Parser — Interactive web demo for constructing LALR parsing tables and tracing parse steps.">
+    <title>LALR Parser — Compilers Demo</title>
 
-        :root {
-            --bg: #0f1117;
-            --surface: #1a1d27;
-            --border: #2a2d3a;
-            --text: #e4e6f0;
-            --text-muted: #8b8fa3;
-            --accent: #6c63ff;
-            --accent-hover: #7b73ff;
-            --green: #4ade80;
-            --red: #f87171;
-            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            --mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-        }
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 
-        body {
-            font-family: var(--font);
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-        }
+    <!-- AOS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
 
-        header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-        }
-
-        header h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        header p {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-top: 0.25rem;
-        }
-
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .card h2 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-size: 0.8rem;
-        }
-
-        label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 0.35rem;
-            color: var(--text-muted);
-        }
-
-        input[type="text"], textarea {
-            width: 100%;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.65rem 0.85rem;
-            color: var(--text);
-            font-family: var(--mono);
-            font-size: 0.9rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus, textarea:focus {
-            border-color: var(--accent);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .form-group { margin-bottom: 1rem; }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 0.7rem 1.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
-
-        .btn:hover { background: var(--accent-hover); }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .btn-row {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--text-muted);
-            color: var(--text);
-            background: transparent;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.2rem 0.65rem;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .badge-accept { background: rgba(74,222,128,0.15); color: var(--green); }
-        .badge-reject { background: rgba(248,113,113,0.15); color: var(--red); }
-        .badge-lalr   { background: rgba(108,99,255,0.15);  color: var(--accent); }
-
-        .result-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .result-header h2 { margin-bottom: 0; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: var(--mono);
-            font-size: 0.82rem;
-        }
-
-        th, td {
-            padding: 0.45rem 0.65rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            color: var(--text-muted);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            position: sticky;
-            top: 0;
-            background: var(--surface);
-        }
-
-        td.action-shift  { color: #60a5fa; }
-        td.action-reduce { color: #fbbf24; }
-        td.action-accept { color: var(--green); font-weight: 600; }
-        td.action-error  { color: var(--red); }
-
-        .table-wrapper {
-            overflow-x: auto;
-            max-height: 350px;
-            overflow-y: auto;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
-
-        .trace-step-highlight { background: rgba(108,99,255,0.08); }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .info-item {
-            background: var(--bg);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-        }
-
-        .info-item .label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .info-item .value {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-top: 0.15rem;
-        }
-
-        .error-box {
-            background: rgba(248,113,113,0.1);
-            border: 1px solid rgba(248,113,113,0.3);
-            border-radius: 8px;
-            padding: 1rem;
-            color: var(--red);
-            font-size: 0.9rem;
-        }
-
-        .hidden { display: none !important; }
-
-        .spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .presets {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-        }
-
-        .preset-btn {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            border-radius: 6px;
-            padding: 0.35rem 0.75rem;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .preset-btn:hover {
-            border-color: var(--accent);
-            color: var(--text);
-        }
-
-        @media (max-width: 640px) {
-            .form-row { grid-template-columns: 1fr; }
-            .container { padding: 1rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>LALR Parser</h1>
-            <p>Enter a context-free grammar and an input string to parse</p>
-        </header>
 
-        <div class="card">
-            <h2>Grammar</h2>
-            <div class="presets">
-                <button class="preset-btn" onclick="loadPreset('simple')">Simple (S -> A a | b)</button>
-                <button class="preset-btn" onclick="loadPreset('expr')">Expression (E -> E + T)</button>
-                <button class="preset-btn" onclick="loadPreset('arith')">Arithmetic (E -> E + T | T * F)</button>
-                <button class="preset-btn" onclick="loadPreset('paren')">Parentheses (S -> ( S ) | a)</button>
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#hero" class="nav-logo">
+                <i class="fas fa-code logo-icon"></i>
+                <span>LALR Parser</span>
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <span class="hamburger"></span>
+            </button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#about">About</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#demo">Demo</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero" id="hero">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-sitemap"></i>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="startSymbol">Start Symbol</label>
-                    <input type="text" id="startSymbol" placeholder="S" value="E">
+            <h1 class="hero-name">LALR Parser</h1>
+            <p class="hero-tagline">Construct LALR(1) parsing tables from any context-free grammar and trace the parse step by step</p>
+            <div class="hero-badges">
+                <span class="tag">LR(1)</span>
+                <span class="tag">LALR</span>
+                <span class="tag">Parsing Tables</span>
+                <span class="tag">Java</span>
+                <span class="tag">Spring Boot</span>
+            </div>
+            <a href="#demo" class="btn btn-primary">Try the Demo</a>
+        </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section" id="about">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">About the Project</h2>
+            <div class="about-content" data-aos="fade-up" data-aos-delay="100">
+                <p>
+                    An implementation of <strong>LALR(1) parsing</strong> built from scratch in Java. Given any context-free grammar, the system constructs the full canonical <strong>LR(1) item sets</strong>, merges same-core states into an <strong>LALR table</strong>, detects conflicts, and parses input strings with a detailed step-by-step trace.
+                </p>
+                <p>
+                    The core algorithms were originally built as a compilers course project, then wrapped in a <strong>Spring Boot REST API</strong> and this interactive web frontend where you can input any grammar, parse any string, and see the parsing tables and trace in real time.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section section-alt" id="how-it-works">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="step-number">1</div>
+                    <h3>Define Grammar</h3>
+                    <p>Enter a start symbol and production rules for your context-free grammar.</p>
+                </div>
+                <div class="step-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="step-number">2</div>
+                    <h3>Build LR(1) Items</h3>
+                    <p>The system computes FIRST sets and constructs the full canonical LR(1) item collection.</p>
+                </div>
+                <div class="step-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="step-number">3</div>
+                    <h3>Merge to LALR</h3>
+                    <p>States with the same core are merged, producing a compact LALR parsing table.</p>
+                </div>
+                <div class="step-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="step-number">4</div>
+                    <h3>Parse &amp; Trace</h3>
+                    <p>Your input is parsed step by step showing the stack, remaining input, and each action taken.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DEMO -->
+    <section class="section" id="demo">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Interactive Demo</h2>
+
+            <div class="demo-card" data-aos="fade-up" data-aos-delay="100">
+                <h3>Grammar Input</h3>
+                <div class="presets">
+                    <button class="preset-btn" onclick="loadPreset('simple')"><i class="fas fa-cube"></i> Simple</button>
+                    <button class="preset-btn" onclick="loadPreset('expr')"><i class="fas fa-plus-minus"></i> Expression</button>
+                    <button class="preset-btn" onclick="loadPreset('arith')"><i class="fas fa-calculator"></i> Arithmetic</button>
+                    <button class="preset-btn" onclick="loadPreset('paren')"><i class="fas fa-brackets-curly"></i> Parentheses</button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startSymbol">Start Symbol</label>
+                        <input type="text" id="startSymbol" placeholder="S" value="E">
+                    </div>
+                    <div class="form-group">
+                        <label for="input">Input String</label>
+                        <input type="text" id="input" placeholder="id + id" value="id + id">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="input">Input String</label>
-                    <input type="text" id="input" placeholder="id + id" value="id + id">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="productions">Productions (one per line, format: LHS -> RHS)</label>
-                <textarea id="productions" rows="4" placeholder="E -> E + T&#10;E -> T&#10;T -> id">E -> E + T
+                    <label for="productions">Productions (one per line)</label>
+                    <textarea id="productions" rows="4" placeholder="E -> E + T&#10;E -> T&#10;T -> id">E -> E + T
 E -> T
 T -> id</textarea>
+                </div>
+                <div class="demo-actions">
+                    <button class="btn btn-primary" id="parseBtn" onclick="doParse()">
+                        <i class="fas fa-play"></i>
+                        <span id="btnText">Parse</span>
+                        <div class="spinner hidden" id="btnSpinner"></div>
+                    </button>
+                    <button class="btn btn-outline" onclick="clearResults()"><i class="fas fa-eraser"></i> Clear</button>
+                </div>
             </div>
-            <div class="btn-row">
-                <button class="btn" id="parseBtn" onclick="doParse()">
-                    <span id="btnText">Parse</span>
-                    <div class="spinner hidden" id="btnSpinner"></div>
-                </button>
-                <button class="btn btn-secondary" onclick="clearResults()">Clear</button>
+
+            <div id="errorBox" class="error-box hidden"></div>
+
+            <div id="results" class="hidden">
+
+                <!-- Result Summary -->
+                <div class="result-card" data-aos="fade-up">
+                    <div class="result-header">
+                        <h3>Result</h3>
+                        <span id="resultBadge" class="badge"></span>
+                        <span id="lalrBadge" class="badge"></span>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="label">Canonical States</div>
+                            <div class="value" id="canonicalCount">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">LALR States</div>
+                            <div class="value" id="lalrCount">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Parse Steps</div>
+                            <div class="value" id="stepCount">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Conflicts</div>
+                            <div class="value" id="conflictCount">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parse Trace -->
+                <div class="table-card" data-aos="fade-up">
+                    <div class="table-card-header">
+                        <h3><i class="fas fa-list-ol" style="margin-right:8px;"></i> Parse Trace</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr><th>#</th><th>Stack</th><th>Input</th><th>Action</th></tr>
+                            </thead>
+                            <tbody id="traceBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ACTION Table -->
+                <div class="table-card" data-aos="fade-up">
+                    <div class="table-card-header">
+                        <h3><i class="fas fa-table" style="margin-right:8px;"></i> ACTION Table</h3>
+                    </div>
+                    <div class="table-wrapper" id="actionTableWrapper"></div>
+                </div>
+
+                <!-- GOTO Table -->
+                <div class="table-card" data-aos="fade-up">
+                    <div class="table-card-header">
+                        <h3><i class="fas fa-arrow-right" style="margin-right:8px;"></i> GOTO Table</h3>
+                    </div>
+                    <div class="table-wrapper" id="gotoTableWrapper"></div>
+                </div>
+
+                <!-- Merge Log -->
+                <div id="mergeCard" class="table-card hidden" data-aos="fade-up">
+                    <div class="table-card-header">
+                        <h3><i class="fas fa-compress-arrows-alt" style="margin-right:8px;"></i> State Merges</h3>
+                    </div>
+                    <ul id="mergeList" style="padding: 20px 24px 20px 44px; color: var(--text-secondary); font-size: 0.85rem; list-style: disc;"></ul>
+                </div>
+
             </div>
         </div>
+    </section>
 
-        <div id="errorBox" class="error-box hidden"></div>
-
-        <div id="results" class="hidden">
-            <div class="card">
-                <div class="result-header">
-                    <h2>Result</h2>
-                    <span id="resultBadge" class="badge"></span>
-                    <span id="lalrBadge" class="badge"></span>
-                </div>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="label">Canonical States</div>
-                        <div class="value" id="canonicalCount">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="label">LALR States</div>
-                        <div class="value" id="lalrCount">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="label">Parse Steps</div>
-                        <div class="value" id="stepCount">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="label">Conflicts</div>
-                        <div class="value" id="conflictCount">-</div>
-                    </div>
-                </div>
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-social">
+                <a href="https://github.com/khaliddosari" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://www.linkedin.com/in/khalid-al-dosari/" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
             </div>
-
-            <div class="card">
-                <h2>Parse Trace</h2>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>#</th><th>Stack</th><th>Input</th><th>Action</th></tr>
-                        </thead>
-                        <tbody id="traceBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>ACTION Table</h2>
-                <div class="table-wrapper" id="actionTableWrapper"></div>
-            </div>
-
-            <div class="card">
-                <h2>GOTO Table</h2>
-                <div class="table-wrapper" id="gotoTableWrapper"></div>
-            </div>
-
-            <div id="mergeCard" class="card hidden">
-                <h2>State Merges</h2>
-                <ul id="mergeList" style="padding-left:1.25rem; color: var(--text-muted); font-size:0.85rem;"></ul>
-            </div>
+            <p class="footer-copy">&copy; 2026 Khalid Al Dosari. All rights reserved.</p>
         </div>
-    </div>
+    </footer>
 
-    <script>
-    const presets = {
-        simple: { start: 'S', prods: 'S -> A a\nS -> b\nA -> c', input: 'c a' },
-        expr:   { start: 'E', prods: 'E -> E + T\nE -> T\nT -> id', input: 'id + id' },
-        arith:  { start: 'E', prods: 'E -> E + T\nE -> T\nT -> T * F\nT -> F\nF -> ( E )\nF -> id', input: 'id + id * id' },
-        paren:  { start: 'S', prods: 'S -> ( S )\nS -> a', input: '( ( a ) )' }
-    };
-
-    function loadPreset(name) {
-        const p = presets[name];
-        document.getElementById('startSymbol').value = p.start;
-        document.getElementById('productions').value = p.prods;
-        document.getElementById('input').value = p.input;
-        clearResults();
-    }
-
-    function clearResults() {
-        document.getElementById('results').classList.add('hidden');
-        document.getElementById('errorBox').classList.add('hidden');
-    }
-
-    async function doParse() {
-        const btn = document.getElementById('parseBtn');
-        const btnText = document.getElementById('btnText');
-        const spinner = document.getElementById('btnSpinner');
-
-        btn.disabled = true;
-        btnText.textContent = 'Parsing...';
-        spinner.classList.remove('hidden');
-        clearResults();
-
-        const startSymbol = document.getElementById('startSymbol').value.trim();
-        const productions = document.getElementById('productions').value
-            .split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        const input = document.getElementById('input').value;
-
-        try {
-            const res = await fetch('/api/parse', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ startSymbol, productions, input })
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                showError(data.error || 'Server error');
-                return;
-            }
-
-            renderResults(data);
-        } catch (err) {
-            showError('Failed to connect to server: ' + err.message);
-        } finally {
-            btn.disabled = false;
-            btnText.textContent = 'Parse';
-            spinner.classList.add('hidden');
-        }
-    }
-
-    function showError(msg) {
-        const box = document.getElementById('errorBox');
-        box.textContent = msg;
-        box.classList.remove('hidden');
-    }
-
-    function renderResults(data) {
-        const lr = data.lalrResult;
-        const pr = data.parseResult;
-
-        document.getElementById('resultBadge').className = 'badge ' + (pr.accepted ? 'badge-accept' : 'badge-reject');
-        document.getElementById('resultBadge').textContent = pr.accepted ? 'Accepted' : 'Rejected';
-
-        document.getElementById('lalrBadge').className = 'badge badge-lalr';
-        document.getElementById('lalrBadge').textContent = lr.lalr ? 'LALR' : 'Not LALR';
-
-        document.getElementById('canonicalCount').textContent = lr.canonicalStateCount;
-        document.getElementById('lalrCount').textContent = lr.lalrStateCount;
-        document.getElementById('stepCount').textContent = pr.steps.length;
-        document.getElementById('conflictCount').textContent = lr.conflicts.length;
-
-        // Parse trace
-        const tbody = document.getElementById('traceBody');
-        tbody.innerHTML = '';
-        pr.steps.forEach((step, i) => {
-            const tr = document.createElement('tr');
-            const isLast = i === pr.steps.length - 1;
-            if (isLast) tr.classList.add('trace-step-highlight');
-
-            const actionClass = step.action.startsWith('s') ? 'action-shift'
-                : step.action.startsWith('r') ? 'action-reduce'
-                : step.action === 'accept' ? 'action-accept'
-                : step.action.startsWith('ERROR') ? 'action-error' : '';
-
-            tr.innerHTML = `<td>${i + 1}</td><td>${esc(step.stack)}</td><td>${esc(step.remainingInput)}</td><td class="${actionClass}">${esc(step.action)}</td>`;
-            tbody.appendChild(tr);
-        });
-
-        // ACTION table
-        renderActionTable(lr.tableData);
-
-        // GOTO table
-        renderGotoTable(lr.tableData);
-
-        // Merge log
-        const mergeCard = document.getElementById('mergeCard');
-        const mergeList = document.getElementById('mergeList');
-        if (lr.mergeLog && lr.mergeLog.length > 0) {
-            mergeList.innerHTML = lr.mergeLog.map(m => `<li>${esc(m)}</li>`).join('');
-            mergeCard.classList.remove('hidden');
-        } else {
-            mergeCard.classList.add('hidden');
-        }
-
-        document.getElementById('results').classList.remove('hidden');
-    }
-
-    function renderActionTable(td) {
-        const terms = td.terminals;
-        const maxState = Math.max(...Object.keys(td.actionTable).map(Number));
-        let html = '<table><thead><tr><th>State</th>';
-        terms.forEach(t => html += `<th>${esc(t)}</th>`);
-        html += '</tr></thead><tbody>';
-
-        for (let s = 0; s <= maxState; s++) {
-            html += `<tr><td>${s}</td>`;
-            const row = td.actionTable[s] || {};
-            terms.forEach(t => {
-                const val = row[t] || '';
-                const cls = val.startsWith('s') ? 'action-shift'
-                    : val.startsWith('r') ? 'action-reduce'
-                    : val === 'accept' ? 'action-accept' : '';
-                html += `<td class="${cls}">${esc(val)}</td>`;
-            });
-            html += '</tr>';
-        }
-        html += '</tbody></table>';
-        document.getElementById('actionTableWrapper').innerHTML = html;
-    }
-
-    function renderGotoTable(td) {
-        const nts = td.nonterminals;
-        const allStates = new Set([
-            ...Object.keys(td.actionTable || {}).map(Number),
-            ...Object.keys(td.gotoTable || {}).map(Number)
-        ]);
-        const maxState = Math.max(...allStates, 0);
-
-        let html = '<table><thead><tr><th>State</th>';
-        nts.forEach(nt => html += `<th>${esc(nt)}</th>`);
-        html += '</tr></thead><tbody>';
-
-        for (let s = 0; s <= maxState; s++) {
-            html += `<tr><td>${s}</td>`;
-            const row = td.gotoTable[s] || {};
-            nts.forEach(nt => {
-                const val = row[nt];
-                html += `<td>${val !== undefined ? val : ''}</td>`;
-            });
-            html += '</tr>';
-        }
-        html += '</tbody></table>';
-        document.getElementById('gotoTableWrapper').innerHTML = html;
-    }
-
-    function esc(str) {
-        const d = document.createElement('div');
-        d.textContent = str;
-        return d.innerHTML;
-    }
-
-    document.addEventListener('keydown', e => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') doParse();
-    });
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
