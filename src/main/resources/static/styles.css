@@ -638,7 +638,11 @@ td.action-error  { color: var(--red); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+<<<<<<< HEAD
 /* TEAM */
+=======
+/* ==================== TEAM ==================== */
+>>>>>>> d5f3853fb29458f5cfdf15f712881b8495b1ccad
 .team-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -683,7 +687,11 @@ td.action-error  { color: var(--red); }
     color: var(--text-primary);
 }
 
+<<<<<<< HEAD
 /* FOOTER */
+=======
+/* ==================== FOOTER ==================== */
+>>>>>>> d5f3853fb29458f5cfdf15f712881b8495b1ccad
 .footer {
     padding: 40px 0;
     text-align: center;
