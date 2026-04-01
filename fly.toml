@@ -1,5 +1,5 @@
 app = "lalr-parser"
-primary_region = "iad"
+primary_region = "sin"
 
 [build]
 
