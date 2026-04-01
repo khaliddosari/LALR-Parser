@@ -28,13 +28,12 @@ public class Grammar {
         }
     }
 
-    public final String           augmentedStart; // e.g. "E'"
     public final List<Production> productions;    // index 0 = augmented S' -> startSymbol
     public final Set<String>      nonterminals;   // all LHS symbols
     public final Set<String>      terminals;      // RHS symbols that are not nonterminals
 
     public Grammar(String startSymbol, List<Production> userProductions) {
-        augmentedStart = startSymbol + "'";
+        String augmentedStart = startSymbol + "'";
 
         productions = new ArrayList<>();
         productions.add(new Production(augmentedStart, new String[]{startSymbol}));

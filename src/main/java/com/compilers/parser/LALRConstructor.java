@@ -14,12 +14,11 @@ import java.util.Map;
 import java.util.Set;
 
 public class LALRConstructor {
-    final List<LRState>         canonicalStates;
-    final ParsingTable          canonicalTable;
-    final Map<Integer, Integer> stateMapping = new HashMap<>();
+    private final List<LRState>         canonicalStates;
+    private final ParsingTable          canonicalTable;
+    private final Map<Integer, Integer> stateMapping = new HashMap<>();
 
-    List<LRState> lalrStates;
-    ParsingTable  lalrTable;
+    private ParsingTable lalrTable;
 
     public LALRConstructor(List<LRState> canonicalStates, ParsingTable canonicalTable) {
         this.canonicalStates = canonicalStates;
@@ -43,7 +42,7 @@ public class LALRConstructor {
             groups.computeIfAbsent(state.getCore(), k -> new ArrayList<>()).add(state);
         }
 
-        lalrStates = new ArrayList<>();
+        List<LRState> lalrStates = new ArrayList<>();
         int lalrId = 0;
         for (Map.Entry<Set<LRItem>, List<LRState>> entry : groups.entrySet()) {
             List<LRState> group = entry.getValue();

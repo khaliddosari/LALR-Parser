@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 public class ParsingTable {
     final Map<Integer, Map<String, String>>  action;
@@ -51,36 +50,4 @@ public class ParsingTable {
     public Set<String> getTerminals()                      { return terminals; }
     public Set<String> getNonterminals()                   { return nonterminals; }
     public List<String> checkConflicts()                   { return conflicts; }
-
-    public void printTable() {
-        System.out.println("\n=== PARSING TABLE ===\n");
-
-        Set<String> allTerminals = new TreeSet<>(terminals); // $ already included
-
-        System.out.println("ACTION TABLE:");
-        System.out.print("State\t");
-        for (String t : allTerminals) System.out.print(t + "\t");
-        System.out.println();
-        for (int state = 0; state < numStates; state++) {
-            System.out.print(state + "\t");
-            for (String t : allTerminals) {
-                String a = getAction(state, t);
-                System.out.print((a != null ? a : "") + "\t");
-            }
-            System.out.println();
-        }
-
-        System.out.println("\nGOTO TABLE:");
-        System.out.print("State\t");
-        for (String nt : new TreeSet<>(nonterminals)) System.out.print(nt + "\t");
-        System.out.println();
-        for (int state = 0; state < numStates; state++) {
-            System.out.print(state + "\t");
-            for (String nt : new TreeSet<>(nonterminals)) {
-                Integer g = getGoto(state, nt);
-                System.out.print((g != null ? g : "") + "\t");
-            }
-            System.out.println();
-        }
-    }
 }
