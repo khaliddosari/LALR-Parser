@@ -1,7 +1,10 @@
 package com.compilers.parser;
 
+import com.compilers.model.ParseResult;
+import com.compilers.model.ParseResult.ParseStep;
 import com.compilers.model.ParsingTable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
@@ -15,47 +18,44 @@ public class LALRParser {
         this.rules = rules;
     }
 
-    public boolean parse(String input) {
+    public ParseResult parse(String input) {
         String trimmed = input.trim();
-        System.out.println("\n=== LALR PARSING ===");
-        System.out.println("Input: " + (trimmed.isEmpty() ? "(empty)" : trimmed));
-        System.out.println("\nStack\t\tInput\t\tAction\n----------------------------------------");
+        List<ParseStep> steps = new ArrayList<>();
 
         Stack<Integer> stack = new Stack<>();
         stack.push(0);
 
-        // Split into tokens; handle empty input cleanly
         String[] tokens = trimmed.isEmpty()
                 ? new String[]{"$"}
                 : (trimmed + " $").split("\\s+");
 
         int pos   = 0;
         int step  = 0;
-        int limit = tokens.length * 20; // O(n) bound: each token causes at most a fixed number of steps
+        int limit = tokens.length * 20;
 
         while (true) {
             if (++step > limit) {
-                System.out.println("ERROR: Step limit exceeded (possible infinite loop)");
-                return false;
+                steps.add(new ParseStep(stack.toString(),
+                        remaining(tokens, pos),
+                        "ERROR: Step limit exceeded"));
+                return new ParseResult(false, trimmed, steps, "Step limit exceeded (possible infinite loop)");
             }
 
             int    state  = stack.peek();
             String symbol = tokens[pos];
             String act    = table.getAction(state, symbol);
-
-            System.out.printf("%-15s\t%-15s\t",
-                    stack.toString(),
-                    String.join(" ", Arrays.copyOfRange(tokens, pos, tokens.length)));
+            String rem    = remaining(tokens, pos);
 
             if (act == null) {
-                System.out.println("ERROR: No action for '" + symbol + "' in state " + state);
-                return false;
+                String err = "No action for '" + symbol + "' in state " + state;
+                steps.add(new ParseStep(stack.toString(), rem, "ERROR: " + err));
+                return new ParseResult(false, trimmed, steps, err);
             }
-            System.out.println(act);
+
+            steps.add(new ParseStep(stack.toString(), rem, act));
 
             if (act.equals("accept")) {
-                System.out.println("\n✓ String accepted!");
-                return true;
+                return new ParseResult(true, trimmed, steps, null);
             } else if (act.startsWith("s")) {
                 stack.push(Integer.parseInt(act.substring(1)));
                 pos++;
@@ -68,22 +68,27 @@ public class LALRParser {
 
                 for (int i = 0; i < popCount; i++) {
                     if (stack.isEmpty()) {
-                        System.out.println("ERROR: Stack underflow during reduce");
-                        return false;
+                        steps.add(new ParseStep("[]", rem, "ERROR: Stack underflow"));
+                        return new ParseResult(false, trimmed, steps, "Stack underflow during reduce");
                     }
                     stack.pop();
                 }
 
                 Integer gotoState = table.getGoto(stack.peek(), lhs);
                 if (gotoState == null) {
-                    System.out.println("ERROR: No GOTO for '" + lhs + "' in state " + stack.peek());
-                    return false;
+                    String err = "No GOTO for '" + lhs + "' in state " + stack.peek();
+                    steps.add(new ParseStep(stack.toString(), rem, "ERROR: " + err));
+                    return new ParseResult(false, trimmed, steps, err);
                 }
                 stack.push(gotoState);
             } else {
-                System.out.println("ERROR: Unknown action: " + act);
-                return false;
+                steps.add(new ParseStep(stack.toString(), rem, "ERROR: Unknown action: " + act));
+                return new ParseResult(false, trimmed, steps, "Unknown action: " + act);
             }
         }
+    }
+
+    private static String remaining(String[] tokens, int pos) {
+        return String.join(" ", Arrays.copyOfRange(tokens, pos, tokens.length));
     }
 }

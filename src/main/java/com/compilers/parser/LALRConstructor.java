@@ -1,5 +1,6 @@
 package com.compilers.parser;
 
+import com.compilers.model.LALRResult;
 import com.compilers.model.LRItem;
 import com.compilers.model.LRState;
 import com.compilers.model.ParsingTable;
@@ -15,7 +16,7 @@ import java.util.Set;
 public class LALRConstructor {
     final List<LRState>         canonicalStates;
     final ParsingTable          canonicalTable;
-    final Map<Integer, Integer> stateMapping = new HashMap<>(); // canonical ID -> LALR ID
+    final Map<Integer, Integer> stateMapping = new HashMap<>();
 
     List<LRState> lalrStates;
     ParsingTable  lalrTable;
@@ -25,12 +26,9 @@ public class LALRConstructor {
         this.canonicalTable  = canonicalTable;
     }
 
-    public ParsingTable constructLALRTable() {
-        System.out.println("\n=== CONSTRUCTING LALR TABLE ===\n");
+    public LALRResult buildResult() {
+        List<String> mergeLog = new ArrayList<>();
 
-        // Group canonical states by core, with state 0's group always first
-        // (LinkedHashMap preserves insertion order, guaranteeing LALR state 0
-        //  corresponds to canonical state 0 on every run).
         Map<Set<LRItem>, List<LRState>> groups = new LinkedHashMap<>();
 
         LRState initialState = null;
@@ -45,10 +43,6 @@ public class LALRConstructor {
             groups.computeIfAbsent(state.getCore(), k -> new ArrayList<>()).add(state);
         }
 
-        System.out.println("Found " + groups.size() + " unique cores");
-        System.out.println("Merging " + canonicalStates.size()
-                + " canonical states into LALR states\n");
-
         lalrStates = new ArrayList<>();
         int lalrId = 0;
         for (Map.Entry<Set<LRItem>, List<LRState>> entry : groups.entrySet()) {
@@ -61,16 +55,14 @@ public class LALRConstructor {
                 String ids = group.stream()
                         .map(s -> String.valueOf(s.getStateId()))
                         .reduce((a, b) -> a + ", " + b).orElse("");
-                System.out.println("Merged states " + ids + " into LALR state " + lalrId);
+                mergeLog.add("Merged states " + ids + " into LALR state " + lalrId);
             }
             lalrId++;
         }
-        System.out.println("\nTotal LALR states: " + lalrStates.size());
 
         lalrTable = new ParsingTable(lalrStates.size(),
                 canonicalTable.getTerminals(), canonicalTable.getNonterminals());
 
-        // Copy ACTION entries, remapping shift targets
         for (LRState canonState : canonicalStates) {
             int canonId     = canonState.getStateId();
             int lalrStateId = stateMapping.get(canonId);
@@ -86,7 +78,6 @@ public class LALRConstructor {
             }
         }
 
-        // Copy GOTO entries, remapping targets
         for (LRState canonState : canonicalStates) {
             int canonId     = canonState.getStateId();
             int lalrStateId = stateMapping.get(canonId);
@@ -97,18 +88,15 @@ public class LALRConstructor {
             }
         }
 
-        return lalrTable;
+        List<String> conflicts = lalrTable.checkConflicts();
+
+        return new LALRResult(
+                canonicalStates.size(),
+                lalrStates.size(),
+                mergeLog,
+                conflicts,
+                new LALRResult.TableData(lalrTable));
     }
 
-    public boolean reportConflicts() {
-        List<String> conflicts = lalrTable.checkConflicts();
-        if (conflicts.isEmpty()) {
-            System.out.println("\n✓ No conflicts found. Grammar is LALR.");
-            return false;
-        } else {
-            System.out.println("\n✗ Conflicts found. Grammar is NOT LALR:");
-            for (String conflict : conflicts) System.out.println("  - " + conflict);
-            return true;
-        }
-    }
+    public ParsingTable getLalrTable() { return lalrTable; }
 }

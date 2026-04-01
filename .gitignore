@@ -1,0 +1,16 @@
+# Build output
+bin/
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven wrapper downloaded binary
+.mvn/wrapper/maven-wrapper.jar

@@ -1,17 +1,32 @@
 package com.compilers;
 
 import com.compilers.model.Grammar;
+import com.compilers.model.LALRResult;
+import com.compilers.model.ParseResult;
+import com.compilers.model.ParseResult.ParseStep;
 import com.compilers.model.ParsingTable;
 import com.compilers.parser.LALRConstructor;
 import com.compilers.parser.LALRParser;
 import com.compilers.parser.LR1Builder;
 
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@SpringBootApplication
 public class Main {
     public static void main(String[] args) {
+        if (args.length > 0 && args[0].equals("--cli")) {
+            runCliTests();
+        } else {
+            SpringApplication.run(Main.class, args);
+        }
+    }
+
+    static void runCliTests() {
         System.out.println("========================================");
         System.out.println("LALR PARSER IMPLEMENTATION");
         System.out.println("========================================\n");
@@ -19,8 +34,6 @@ public class Main {
         System.out.println("\n\n========================================\n\n");
         testExpressionGrammar();
     }
-
-    // ── Simple grammar: S -> A a | b,  A -> c ───────────────────────────────
 
     static void testSimpleGrammar() {
         System.out.println("SIMPLE GRAMMAR\nGrammar:\n  S -> A a\n  S -> b\n  A -> c");
@@ -31,15 +44,14 @@ public class Main {
                 new Grammar.Production("A", new String[]{"c"})
         ));
 
-        System.out.println("\n--- Function 1: LALR Table Construction ---");
-        LR1Builder.BuildResult result = new LR1Builder(grammar).build();
-        LALRConstructor constructor = new LALRConstructor(result.canonicalStates, result.canonicalTable);
-        ParsingTable lalrTable = constructor.constructLALRTable();
-        constructor.reportConflicts();
-        lalrTable.printTable();
+        LR1Builder.BuildResult buildResult = new LR1Builder(grammar).build();
+        LALRConstructor constructor = new LALRConstructor(buildResult.canonicalStates, buildResult.canonicalTable);
+        LALRResult lalrResult = constructor.buildResult();
+        ParsingTable lalrTable = constructor.getLalrTable();
 
-        System.out.println("\n--- Function 2: LALR Parsing ---");
-        LALRParser parser = new LALRParser(lalrTable, result.rules);
+        printLALRResult(lalrResult);
+
+        LALRParser parser = new LALRParser(lalrTable, buildResult.rules);
         List<TestResult> results = new ArrayList<>();
 
         results.add(runTest(parser,  1, "c a",   true));
@@ -59,8 +71,6 @@ public class Main {
         printSummary(results);
     }
 
-    // ── Expression grammar: E -> E + T | T,  T -> id ─────────────────────────
-
     static void testExpressionGrammar() {
         System.out.println("EXPRESSION GRAMMAR\nGrammar:\n  E -> E + T\n  E -> T\n  T -> id");
 
@@ -70,15 +80,14 @@ public class Main {
                 new Grammar.Production("T", new String[]{"id"})
         ));
 
-        System.out.println("\n--- Function 1: LALR Table Construction ---");
-        LR1Builder.BuildResult result = new LR1Builder(grammar).build();
-        LALRConstructor constructor = new LALRConstructor(result.canonicalStates, result.canonicalTable);
-        ParsingTable lalrTable = constructor.constructLALRTable();
-        constructor.reportConflicts();
-        lalrTable.printTable();
+        LR1Builder.BuildResult buildResult = new LR1Builder(grammar).build();
+        LALRConstructor constructor = new LALRConstructor(buildResult.canonicalStates, buildResult.canonicalTable);
+        LALRResult lalrResult = constructor.buildResult();
+        ParsingTable lalrTable = constructor.getLalrTable();
 
-        System.out.println("\n--- Function 2: LALR Parsing ---");
-        LALRParser parser = new LALRParser(lalrTable, result.rules);
+        printLALRResult(lalrResult);
+
+        LALRParser parser = new LALRParser(lalrTable, buildResult.rules);
         List<TestResult> results = new ArrayList<>();
 
         results.add(runTest(parser,  1, "id + id",           true));
@@ -98,7 +107,64 @@ public class Main {
         printSummary(results);
     }
 
-    // ── Test runner + summary ─────────────────────────────────────────────────
+    // --- CLI printing helpers ---
+
+    static void printLALRResult(LALRResult r) {
+        System.out.println("\n--- LALR Table Construction ---");
+        System.out.println("Canonical states: " + r.getCanonicalStateCount());
+        System.out.println("LALR states:      " + r.getLalrStateCount());
+        for (String msg : r.getMergeLog()) System.out.println("  " + msg);
+
+        if (r.isLALR()) {
+            System.out.println("\nNo conflicts found. Grammar is LALR.");
+        } else {
+            System.out.println("\nConflicts found:");
+            for (String c : r.getConflicts()) System.out.println("  - " + c);
+        }
+
+        LALRResult.TableData td = r.getTableData();
+        System.out.println("\nACTION TABLE:");
+        System.out.print("State\t");
+        for (String t : td.getTerminals()) System.out.print(t + "\t");
+        System.out.println();
+        int maxState = td.getActionTable().keySet().stream().mapToInt(i -> i).max().orElse(-1);
+        for (int s = 0; s <= maxState; s++) {
+            System.out.print(s + "\t");
+            var row = td.getActionTable().getOrDefault(s, java.util.Collections.emptyMap());
+            for (String t : td.getTerminals())
+                System.out.print(row.getOrDefault(t, "") + "\t");
+            System.out.println();
+        }
+
+        System.out.println("\nGOTO TABLE:");
+        System.out.print("State\t");
+        for (String nt : td.getNonterminals()) System.out.print(nt + "\t");
+        System.out.println();
+        int maxGoto = td.getGotoTable().keySet().stream().mapToInt(i -> i).max().orElse(-1);
+        for (int s = 0; s <= Math.max(maxState, maxGoto); s++) {
+            System.out.print(s + "\t");
+            var row = td.getGotoTable().getOrDefault(s, java.util.Collections.emptyMap());
+            for (String nt : td.getNonterminals()) {
+                Integer g = row.get(nt);
+                System.out.print((g != null ? g : "") + "\t");
+            }
+            System.out.println();
+        }
+    }
+
+    static void printParseResult(ParseResult pr) {
+        String display = pr.getInput().isEmpty() ? "(empty)" : pr.getInput();
+        System.out.println("\n=== LALR PARSING ===");
+        System.out.println("Input: " + display);
+        System.out.println("\nStack\t\tInput\t\tAction\n----------------------------------------");
+        for (ParseStep step : pr.getSteps()) {
+            System.out.printf("%-15s\t%-15s\t%s%n",
+                    step.getStack(), step.getRemainingInput(), step.getAction());
+        }
+        System.out.println(pr.isAccepted() ? "\nString accepted!" : "\nString rejected.");
+    }
+
+    // --- Test runner + summary ---
 
     static class TestResult {
         final int     num;
@@ -120,8 +186,9 @@ public class Main {
         String label   = expectAccept ? "Valid"   : "Invalid";
         String display = input.isEmpty() ? "(empty)" : "\"" + input + "\"";
         System.out.println("\n--- Test " + num + ": " + label + " Input " + display + " ---");
-        boolean actual = parser.parse(input);
-        return new TestResult(num, input, expectAccept, actual);
+        ParseResult pr = parser.parse(input);
+        printParseResult(pr);
+        return new TestResult(num, input, expectAccept, pr.isAccepted());
     }
 
     static void printSummary(List<TestResult> results) {

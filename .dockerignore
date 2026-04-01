@@ -1,0 +1,9 @@
+target/
+bin/
+.git/
+.idea/
+*.iml
+.mvn/wrapper/maven-wrapper.jar
+README.md
+REPORT.md
+claude.md

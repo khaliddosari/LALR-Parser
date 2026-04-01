@@ -47,6 +47,7 @@ public class ParsingTable {
 
     public String  getAction(int state, String symbol)     { return action.get(state).get(symbol); }
     public Integer getGoto(int state, String nonterminal)  { return goTo.get(state).get(nonterminal); }
+    public int         getNumStates()                      { return numStates; }
     public Set<String> getTerminals()                      { return terminals; }
     public Set<String> getNonterminals()                   { return nonterminals; }
     public List<String> checkConflicts()                   { return conflicts; }

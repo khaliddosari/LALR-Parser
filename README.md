@@ -6,41 +6,56 @@ A Java implementation of an LALR (Look-Ahead LR) parser, including LALR table co
 
 ```
 .
-├── src/
-│   └── main/
-│       └── java/
-│           └── com/
-│               └── compilers/
-│                   ├── Main.java              # Entry point and test cases
-│                   ├── model/
-│                   │   ├── LRItem.java        # LR item: lhs -> rhs with dot and lookahead
-│                   │   ├── LRState.java       # Set of LR items; supports core merging
-│                   │   └── ParsingTable.java  # ACTION and GOTO tables with conflict detection
-│                   └── parser/
-│                       ├── LALRConstructor.java  # Builds LALR table from canonical LR states
-│                       └── LALRParser.java       # Stack-based LALR parser with trace output
-├── bin/                   # Compiled .class files
+├── src/main/
+│   ├── java/com/compilers/
+│   │   ├── Main.java                    # Spring Boot entry point + CLI test runner
+│   │   ├── controller/
+│   │   │   └── ParseController.java     # REST API endpoint
+│   │   ├── model/
+│   │   │   ├── Grammar.java             # CFG representation with auto-augmentation
+│   │   │   ├── LRItem.java              # LR item with core-only equality for LALR merging
+│   │   │   ├── LRState.java             # Set of LR items; supports core merging
+│   │   │   └── ParsingTable.java        # ACTION and GOTO tables with conflict detection
+│   │   └── parser/
+│   │       ├── LR1Builder.java          # Canonical LR(1) construction from grammar
+│   │       ├── LALRConstructor.java     # Merges LR(1) states into LALR table
+│   │       └── LALRParser.java          # Stack-based LALR parser with trace
+│   └── resources/
+│       └── static/                      # Web frontend (HTML/JS/CSS)
+├── pom.xml
+├── Dockerfile
+├── docker-compose.yml
 ├── REPORT.md
 └── README.md
 ```
 
 ## Building and Running
 
-### Compile
+### With Maven Wrapper (recommended)
+```bash
+./mvnw clean package
+java -jar target/lalr-parser-1.0.0.jar
+```
+
+### Manual (no build tool)
 ```bash
 javac -d bin \
+  src/main/java/com/compilers/model/Grammar.java \
   src/main/java/com/compilers/model/LRItem.java \
   src/main/java/com/compilers/model/LRState.java \
   src/main/java/com/compilers/model/ParsingTable.java \
+  src/main/java/com/compilers/parser/LR1Builder.java \
   src/main/java/com/compilers/parser/LALRConstructor.java \
   src/main/java/com/compilers/parser/LALRParser.java \
   src/main/java/com/compilers/Main.java
-```
-
-### Run
-```bash
 java -cp bin com.compilers.Main
 ```
+
+### With Docker
+```bash
+docker compose up --build
+```
+Then open http://localhost:8080 in your browser.
 
 ## Grammars Tested
 
@@ -51,6 +66,19 @@ java -cp bin com.compilers.Main
 
 Each grammar runs 13 test cases covering valid inputs, invalid inputs, empty strings, and edge cases.
 
-## Planned: Spring Boot Web Interface
+## REST API
 
-The project will be extended into a web application using Spring Boot and Maven. The model and parser packages will remain unchanged — a REST controller will wrap the parser and serve results to a browser frontend.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/parse` | POST | Parse input against a grammar, returns structured result as JSON |
+| `/api/health` | GET | Health check |
+
+### Example request
+```json
+POST /api/parse
+{
+  "startSymbol": "E",
+  "productions": ["E -> E + T", "E -> T", "T -> id"],
+  "input": "id + id"
+}
+```
