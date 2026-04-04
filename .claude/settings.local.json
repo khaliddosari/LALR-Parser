@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(javac -d bin Main.java)",
-      "Bash(java -cp bin Main)"
-    ]
-  }
-}
