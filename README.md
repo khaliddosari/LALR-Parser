@@ -2,6 +2,9 @@
 
 A web-based LALR(1) parser that takes any context-free grammar and an input string, builds the full ACTION/GOTO table, and runs the parse with a step-by-step trace showing whether the input is accepted or rejected.
 
+![Preview](Preview.png)
+
+
 ---
 
 ## Tech Stack
